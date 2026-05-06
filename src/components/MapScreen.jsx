@@ -54,7 +54,7 @@ export default function MapScreen({ missions, completedMissions, unlockedMission
   const mapRef = useRef(null);
   const loadedRef = useRef(false);
   const charLayerRef = useRef(null);
-  const modelsLoadedRef = useRef(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedMission, setSelectedMission] = useState(null);
 
   const updateSource = useCallback(() => {
@@ -124,6 +124,7 @@ export default function MapScreen({ missions, completedMissions, unlockedMission
       charLayer.updatePosition("partner", MAP_CENTER);
 
       loadedRef.current = true;
+      setMapLoaded(true);
     });
 
     map.on("click", CIRCLE_LAYER, (e) => {
@@ -144,21 +145,19 @@ export default function MapScreen({ missions, completedMissions, unlockedMission
       mapRef.current = null;
       charLayerRef.current = null;
       loadedRef.current = false;
-      modelsLoadedRef.current = false;
     };
   }, []);
 
   useEffect(() => {
     const layer = charLayerRef.current;
-    if (!layer || !loadedRef.current || modelsLoadedRef.current) return;
+    if (!layer || !mapLoaded) return;
 
     const selfModel = myCharacter?.model || "/cute_chick.glb";
     const partnerModel = partnerCharacter?.model || "/toothless_cute.glb";
 
     layer.loadModel(selfModel, "self");
     layer.loadModel(partnerModel, "partner");
-    modelsLoadedRef.current = true;
-  }, [myCharacter, partnerCharacter, loadedRef.current]);
+  }, [myCharacter, partnerCharacter, mapLoaded]);
 
   useEffect(() => {
     const cleanup = watchPosition((pos) => {

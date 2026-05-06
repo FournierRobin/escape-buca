@@ -389,9 +389,34 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture }) {
 
   return (
     <div className="screen screen-padded" style={{ justifyContent: "space-between" }}>
-      <div className="fade-in" key={currentPose.id}>
+      <div className="fade-in" key={currentPose.id} style={{ overflow: "auto", flex: 1 }}>
         <div className="tag">Pose {poseIndex + 1} / {mission.poses.length}</div>
         <h3 style={{ fontSize: 18, marginBottom: 16, color: "var(--gold)" }}>{currentPose.title}</h3>
+
+        {currentPose.referenceImage && (
+          <div style={{
+            marginBottom: 16, borderRadius: 4, overflow: "hidden",
+            border: "2px solid var(--gold-dim)",
+            position: "relative",
+          }}>
+            <img
+              src={currentPose.referenceImage}
+              alt="Pose de référence"
+              style={{ width: "100%", maxHeight: 220, objectFit: "cover", display: "block" }}
+            />
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0,
+              background: "linear-gradient(transparent, rgba(44,36,22,0.8))",
+              padding: "12px 12px 8px",
+              fontFamily: "var(--font-cursive)", fontSize: 10,
+              color: "var(--text-light)", letterSpacing: 1,
+              textTransform: "uppercase",
+            }}>
+              Pose à reproduire
+            </div>
+          </div>
+        )}
+
         <div className="card" style={{ padding: 20 }}>
           <pre style={{
             fontFamily: "var(--font-cursive)", fontSize: 13,

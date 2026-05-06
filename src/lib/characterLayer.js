@@ -20,7 +20,7 @@ export function createCharacterLayer(refLngLat) {
     _models: {},
     _positions: {},
     _mixers: [],
-    _clock: new THREE.Clock(),
+    _timer: new THREE.Timer(),
 
     onAdd(map, gl) {
       this.camera = new THREE.Camera();
@@ -105,8 +105,9 @@ export function createCharacterLayer(refLngLat) {
     render(gl, matrix) {
       if (!this.renderer) return;
 
-      const delta = this._clock.getDelta();
-      const time = this._clock.elapsedTime;
+      this._timer.update();
+      const delta = this._timer.getDelta();
+      const time = this._timer.getElapsed();
 
       this._mixers.forEach((m) => m.update(delta));
 
@@ -116,8 +117,7 @@ export function createCharacterLayer(refLngLat) {
 
       const metersPerPixel =
         (156543.03392 * Math.cos((lat * Math.PI) / 180)) / Math.pow(2, zoom);
-      const separationMeters = Math.max(15, 40 * metersPerPixel);
-      const separationUnits = separationMeters;
+      const separationUnits = Math.max(5, 18 * metersPerPixel);
 
       Object.entries(this._models).forEach(([key, group]) => {
         if (!group.visible) return;

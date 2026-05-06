@@ -52,7 +52,6 @@ export default function App() {
   const [roomCode, setRoomCode] = useState(saved?.roomCode || "LOCAL");
   const [myCharacterId, setMyCharacterId] = useState(saved?.myCharacterId || null);
   const [partnerCharacterId, setPartnerCharacterId] = useState(saved?.partnerCharacterId || null);
-  const [partnerCharacterChoice, setPartnerCharacterChoice] = useState(null);
   const [photos, setPhotos] = useState(saved?.photos || {});
   const [bombState, setBombState] = useState({
     devicePlayerId: null,
@@ -82,10 +81,12 @@ export default function App() {
 
     return subscribeToRoom(roomId, (state) => {
       if (ignoreNextSync.current) {
+        console.log("[App] ignoreNextSync=true, SKIPPING update", { screen: state?.screen, characters: state?.characters, readyPlayers: state?.readyPlayers });
         ignoreNextSync.current = false;
         return;
       }
       if (!state) return;
+      console.log("[App] processing subscription update", { screen: state?.screen, characters: state?.characters, readyPlayers: state?.readyPlayers });
 
       if (state.completedMissions) {
         setCompletedMissions(state.completedMissions);
@@ -95,14 +96,15 @@ export default function App() {
         setPhotos((prev) => ({ ...prev, ...state.photos }));
       }
 
-      if (state.characters) {
-        const partnerEntry = Object.entries(state.characters).find(([pid]) => pid !== playerId);
-        if (partnerEntry) {
-          setPartnerCharacterChoice(partnerEntry[1]);
+      if (state.screen === "character-select") {
+        setScreen(SCREENS.CHARACTER_SELECT);
+      } else if (state.screen === "map") {
+        if (state.characters) {
+          const myEntry = Object.entries(state.characters).find(([pid]) => pid === playerId);
+          const partnerEntry = Object.entries(state.characters).find(([pid]) => pid !== playerId);
+          if (myEntry) setMyCharacterId(myEntry[1]);
+          if (partnerEntry) setPartnerCharacterId(partnerEntry[1]);
         }
-      }
-
-      if (state.screen === "map") {
         setActiveMissionId(null);
         setScreen(SCREENS.MAP);
       } else if (state.screen === "mission" && state.activeMissionId) {
@@ -230,7 +232,8 @@ export default function App() {
     setMyCharacterId(myId);
     setPartnerCharacterId(partnerId);
     setScreen(SCREENS.MAP);
-  }, []);
+    syncToRoom({ screen: "map" });
+  }, [syncToRoom]);
 
   const handlePhotoCapture = useCallback(async (photoKey, file) => {
     const url = await uploadPhoto(roomCode, photoKey, file);

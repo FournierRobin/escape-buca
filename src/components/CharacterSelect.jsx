@@ -1,44 +1,168 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { characters } from "../data/characters";
-import { patchRoomState, getRoomState } from "../lib/supabase";
+import { patchRoomState, getRoomState, subscribeToRoom } from "../lib/supabase";
+import CharacterPreview from "./CharacterPreview";
 
-export default function CharacterSelect({ onReady, roomId, playerId, partnerChoice }) {
+export default function CharacterSelect({ onReady, roomId, playerId }) {
   const [myChoice, setMyChoice] = useState(null);
+  const [partnerChoice, setPartnerChoice] = useState(null);
+  const [readyPlayers, setReadyPlayers] = useState([]);
+  const hasLaunched = useRef(false);
 
   const isOnline = roomId && roomId !== "local";
+  const selectedChar = characters.find((c) => c.id === myChoice);
+  const partnerChar = characters.find((c) => c.id === partnerChoice);
+
+  const readyCount = readyPlayers.length;
+  const amReady = readyPlayers.includes(playerId);
+  const bothSelected = isOnline ? !!(myChoice && partnerChoice) : !!myChoice;
+
+  console.log("[CharSelect] render", {
+    playerId: playerId?.slice(0, 8),
+    isOnline,
+    roomId: roomId?.slice(0, 8),
+    myChoice,
+    partnerChoice,
+    readyPlayers,
+    readyCount,
+    amReady,
+    bothSelected,
+  });
+
+  useEffect(() => {
+    if (!isOnline) {
+      console.log("[CharSelect] offline mode, skipping subscription");
+      return;
+    }
+
+    console.log("[CharSelect] setting up subscription for room", roomId?.slice(0, 8));
+
+    getRoomState(roomId).then((state) => {
+      console.log("[CharSelect] initial state loaded", {
+        characters: state?.characters,
+        readyPlayers: state?.readyPlayers,
+      });
+      if (!state) return;
+      if (state.characters) {
+        Object.entries(state.characters).forEach(([pid, charId]) => {
+          if (pid === playerId) setMyChoice(charId);
+          else setPartnerChoice(charId);
+        });
+      }
+      if (state.readyPlayers) setReadyPlayers(state.readyPlayers);
+    });
+
+    return subscribeToRoom(roomId, (state) => {
+      console.log("[CharSelect] subscription update received", {
+        characters: state?.characters,
+        readyPlayers: state?.readyPlayers,
+        screen: state?.screen,
+        fullKeys: state ? Object.keys(state) : "null",
+      });
+
+      if (!state) return;
+
+      if (state.characters) {
+        const entries = Object.entries(state.characters);
+        entries.forEach(([pid, charId]) => {
+          const isMe = pid === playerId;
+          console.log("[CharSelect] character entry", {
+            pid: pid.slice(0, 8),
+            charId,
+            isMe,
+          });
+          if (isMe) {
+            setMyChoice((prev) => prev || charId);
+          } else {
+            setPartnerChoice(charId);
+          }
+        });
+      } else {
+        console.log("[CharSelect] no characters in state update");
+      }
+
+      const ready = state.readyPlayers || [];
+      setReadyPlayers(ready);
+
+      if (ready.length >= 2 && !hasLaunched.current && state.characters) {
+        const chars = state.characters;
+        const myId = chars[playerId];
+        const partnerId = Object.entries(chars).find(([pid]) => pid !== playerId)?.[1];
+        console.log("[CharSelect] LAUNCH condition met", { myId, partnerId });
+        if (myId && partnerId) {
+          hasLaunched.current = true;
+          onReady(myId, partnerId);
+        }
+      }
+    });
+  }, [isOnline, roomId, playerId, onReady]);
 
   async function handleSelect(charId) {
+    console.log("[CharSelect] handleSelect", { charId, currentChoice: myChoice, amReady });
+    if (charId === myChoice && amReady) return;
     setMyChoice(charId);
+
     if (isOnline) {
       const current = await getRoomState(roomId);
       const currentChars = current?.characters || {};
-      patchRoomState(roomId, {
+      const currentReady = current?.readyPlayers || [];
+      const patch = {
         characters: { ...currentChars, [playerId]: charId },
+        readyPlayers: currentReady.filter((pid) => pid !== playerId),
+      };
+      console.log("[CharSelect] patching room", {
+        currentChars,
+        newChars: patch.characters,
+        newReady: patch.readyPlayers,
       });
+      const result = await patchRoomState(roomId, patch);
+      console.log("[CharSelect] patch result", result);
     }
   }
 
-  function handleContinue() {
-    if (!myChoice) return;
+  async function handleReady() {
+    console.log("[CharSelect] handleReady", { myChoice, isOnline });
 
-    let partnerId = partnerChoice;
-    if (!partnerId) {
+    if (!isOnline) {
       const remaining = characters.filter((c) => c.id !== myChoice);
-      partnerId = remaining[Math.floor(Math.random() * remaining.length)].id;
+      const partnerId = remaining[Math.floor(Math.random() * remaining.length)].id;
+      onReady(myChoice, partnerId);
+      return;
     }
 
-    onReady(myChoice, partnerId);
-  }
+    const current = await getRoomState(roomId);
+    const currentReady = current?.readyPlayers || [];
+    console.log("[CharSelect] current readyPlayers from DB", currentReady);
 
-  const canContinue = isOnline ? myChoice && partnerChoice : myChoice;
+    if (currentReady.includes(playerId)) {
+      console.log("[CharSelect] already ready, skipping");
+      return;
+    }
+
+    const newReady = [...currentReady, playerId];
+    console.log("[CharSelect] setting readyPlayers to", newReady);
+    setReadyPlayers(newReady);
+    await patchRoomState(roomId, { readyPlayers: newReady });
+
+    if (newReady.length >= 2 && !hasLaunched.current) {
+      hasLaunched.current = true;
+      const chars = current?.characters || {};
+      const myId = chars[playerId] || myChoice;
+      const partnerId = Object.entries(chars).find(([pid]) => pid !== playerId)?.[1] || partnerChoice;
+      console.log("[CharSelect] LAUNCH from handleReady", { myId, partnerId });
+      if (myId && partnerId) {
+        onReady(myId, partnerId);
+      }
+    }
+  }
 
   return (
     <div className="screen screen-padded" style={{ justifyContent: "space-between" }}>
-      <div className="fade-in">
+      <div className="fade-in" style={{ overflow: "auto", flex: 1 }}>
         <div className="tag">Dossier Personnel</div>
         <h2 style={{ fontSize: 20, marginBottom: 8 }}>Choisissez votre agent</h2>
         <p style={{
-          fontSize: 11, color: "var(--text-dim)", marginBottom: 20,
+          fontSize: 11, color: "var(--text-dim)", marginBottom: 12,
           fontFamily: "var(--font-cursive)", lineHeight: 1.6,
         }}>
           {isOnline
@@ -46,14 +170,46 @@ export default function CharacterSelect({ onReady, roomId, playerId, partnerChoi
             : "Sélectionnez votre personnage pour l'enquête."}
         </p>
 
+        {selectedChar ? (
+          <div style={{
+            marginBottom: 12,
+            border: "1px solid var(--gold-dim)",
+            background: "rgba(44,36,22,0.05)",
+            position: "relative",
+            overflow: "hidden",
+            borderRadius: 4,
+          }}>
+            <CharacterPreview modelUrl={selectedChar.model} />
+            <div style={{
+              position: "absolute", bottom: 8, left: 0, right: 0,
+              textAlign: "center",
+              fontFamily: "var(--font-serif)", fontSize: 14,
+              fontWeight: 700, color: "var(--gold)",
+              textShadow: "0 1px 3px rgba(244,228,193,0.8)",
+            }}>
+              {selectedChar.name}
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            height: 180, marginBottom: 12,
+            border: "1px dashed var(--gold-dim)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "var(--text-dim)", fontFamily: "var(--font-cursive)",
+            fontSize: 12, borderRadius: 4,
+          }}>
+            Sélectionnez un agent
+          </div>
+        )}
+
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          gap: 12,
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 8,
         }}>
           {characters.map((char) => {
             const isMine = myChoice === char.id;
-            const isTaken = partnerChoice === char.id;
+            const isTaken = isOnline && partnerChoice === char.id;
 
             return (
               <button
@@ -61,40 +217,43 @@ export default function CharacterSelect({ onReady, roomId, playerId, partnerChoi
                 disabled={isTaken}
                 onClick={() => handleSelect(char.id)}
                 style={{
-                  padding: "16px 12px",
+                  padding: "10px 4px",
                   background: isMine
                     ? "var(--bg-dark)"
                     : isTaken
-                    ? "rgba(196,169,120,0.3)"
+                    ? "rgba(139,26,26,0.12)"
                     : "var(--bg-card)",
                   border: isMine
+                    ? "2px solid var(--gold)"
+                    : isTaken
                     ? "2px solid var(--red)"
                     : "1px solid var(--gold-dim)",
                   color: isMine
                     ? "var(--text-light)"
                     : isTaken
-                    ? "var(--gold-dim)"
+                    ? "var(--red)"
                     : "var(--text)",
                   textAlign: "center",
-                  opacity: isTaken ? 0.5 : 1,
+                  opacity: isTaken ? 0.6 : 1,
                   transition: "all 0.2s ease",
                 }}
               >
-                <div style={{ fontSize: 32, marginBottom: 6 }}>{char.emoji}</div>
+                <div style={{ fontSize: 24, marginBottom: 2 }}>{char.emoji}</div>
                 <div style={{
                   fontFamily: "var(--font-cursive)",
-                  fontSize: 13,
-                  letterSpacing: 0.5,
+                  fontSize: 10,
+                  letterSpacing: 0.3,
                 }}>
                   {char.name}
                 </div>
                 {isTaken && (
                   <div style={{
-                    fontSize: 9, marginTop: 4,
+                    fontSize: 8, marginTop: 2,
                     fontFamily: "var(--font-cursive)",
-                    color: "var(--text-dim)",
+                    color: "var(--red)",
+                    fontWeight: 700,
                   }}>
-                    Pris par l'autre
+                    Pris
                   </div>
                 )}
               </button>
@@ -102,29 +261,52 @@ export default function CharacterSelect({ onReady, roomId, playerId, partnerChoi
           })}
         </div>
 
-        {isOnline && partnerChoice && (
+        {isOnline && partnerChoice && partnerChar && (
           <div style={{
-            marginTop: 16, textAlign: "center",
-            fontSize: 11, color: "var(--text-dim)",
+            marginTop: 12, textAlign: "center",
+            padding: "8px 12px",
+            background: "rgba(139,26,26,0.08)",
+            border: "1px solid rgba(139,26,26,0.2)",
+            borderRadius: 4,
+            fontSize: 11, color: "var(--text)",
             fontFamily: "var(--font-cursive)",
           }}>
-            Votre partenaire a choisi : {characters.find((c) => c.id === partnerChoice)?.name}
+            Votre coéquipier a choisi : <strong style={{ color: "var(--red)" }}>{partnerChar.name} {partnerChar.emoji}</strong>
           </div>
         )}
       </div>
 
-      <div style={{ marginTop: 24 }}>
-        {canContinue ? (
-          <button className="btn-primary" onClick={handleContinue}>
-            Commencer l'enquête
-          </button>
+      <div style={{ marginTop: 16, flexShrink: 0 }}>
+        {!isOnline ? (
+          myChoice ? (
+            <button className="btn-primary" onClick={handleReady}>
+              Commencer l'enquête
+            </button>
+          ) : (
+            <p style={{
+              textAlign: "center", fontSize: 11,
+              color: "var(--text-dim)", fontFamily: "var(--font-cursive)",
+            }}>
+              Sélectionnez votre agent
+            </p>
+          )
+        ) : bothSelected ? (
+          amReady ? (
+            <button className="btn-primary" disabled style={{ opacity: 0.7 }}>
+              En attente... ({readyCount}/2)
+            </button>
+          ) : (
+            <button className="btn-primary" onClick={handleReady}>
+              C'est parti ! ({readyCount}/2)
+            </button>
+          )
         ) : (
           <p style={{
             textAlign: "center", fontSize: 11,
             color: "var(--text-dim)", fontFamily: "var(--font-cursive)",
           }}>
-            {isOnline && myChoice && !partnerChoice
-              ? "En attente du choix de votre partenaire..."
+            {myChoice && !partnerChoice
+              ? "En attente du choix de votre coéquipier..."
               : "Sélectionnez votre agent"}
           </p>
         )}

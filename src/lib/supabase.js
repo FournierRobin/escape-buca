@@ -10,10 +10,10 @@ export const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
 export const isSupabaseConfigured = !!supabase;
 
 export function getPlayerId() {
-  let id = localStorage.getItem("escape-player-id");
+  let id = sessionStorage.getItem("escape-player-id");
   if (!id) {
     id = crypto.randomUUID();
-    localStorage.setItem("escape-player-id", id);
+    sessionStorage.setItem("escape-player-id", id);
   }
   return id;
 }
@@ -29,7 +29,7 @@ function generateCode() {
 
 const INITIAL_STATE = {
   completedMissions: [],
-  screen: "map",
+  screen: "character-select",
   activeMissionId: null,
   missionStepIndex: 0,
   bombDevicePlayerId: null,
@@ -82,10 +82,17 @@ export async function patchRoomState(roomId, patch) {
   if (!supabase || roomId === "local") return;
 
   const current = await getRoomState(roomId);
-  if (!current) return;
+  if (!current) {
+    console.warn("[patchRoomState] no current state found for room", roomId);
+    return;
+  }
 
   const merged = { ...current, ...patch };
-  await supabase.from("rooms").update({ state: merged }).eq("id", roomId);
+  console.log("[patchRoomState] patching", { patchKeys: Object.keys(patch), characters: merged.characters, readyPlayers: merged.readyPlayers });
+  const { error } = await supabase.from("rooms").update({ state: merged }).eq("id", roomId);
+  if (error) {
+    console.error("[patchRoomState] ERROR", error);
+  }
 }
 
 export async function uploadPhoto(roomCode, photoKey, file) {
