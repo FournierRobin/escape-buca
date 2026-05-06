@@ -2,14 +2,15 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-export default function CharacterPreview({ modelUrl }) {
+export default function CharacterPreview({ modelUrl, partnerModelUrl }) {
   const containerRef = useRef(null);
   const rendererRef = useRef(null);
   const sceneRef = useRef(null);
-  const modelRef = useRef(null);
-  const mixerRef = useRef(null);
+  const modelsRef = useRef({ self: null, partner: null });
+  const mixersRef = useRef([]);
   const timerRef = useRef(new THREE.Timer());
   const frameRef = useRef(null);
+  const cameraRef = useRef(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -22,8 +23,7 @@ export default function CharacterPreview({ modelUrl }) {
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 100);
-    camera.position.set(0, 1.0, 4.5);
-    camera.lookAt(0, 0.6, 0);
+    cameraRef.current = camera;
 
     scene.add(new THREE.AmbientLight(0xfff5e6, 1.5));
     const sun = new THREE.DirectionalLight(0xfff5e6, 1.0);
@@ -50,13 +50,18 @@ export default function CharacterPreview({ modelUrl }) {
       const delta = timerRef.current.getDelta();
       const time = timerRef.current.getElapsed();
 
-      if (mixerRef.current) {
-        mixerRef.current.update(delta);
-      }
+      mixersRef.current.forEach((m) => m.update(delta));
 
-      if (modelRef.current) {
-        modelRef.current.rotation.y = time * 0.8;
-        modelRef.current.position.y = Math.sin(time * 1.5) * 0.08;
+      const selfGroup = modelsRef.current.self;
+      const partnerGroup = modelsRef.current.partner;
+
+      if (selfGroup) {
+        selfGroup.rotation.y = time * 0.8;
+        selfGroup.position.y = Math.sin(time * 1.5) * 0.08;
+      }
+      if (partnerGroup) {
+        partnerGroup.rotation.y = -time * 0.8;
+        partnerGroup.position.y = Math.sin(time * 1.5 + Math.PI) * 0.08;
       }
 
       renderer.render(scene, camera);
@@ -74,22 +79,56 @@ export default function CharacterPreview({ modelUrl }) {
 
   useEffect(() => {
     const scene = sceneRef.current;
-    if (!scene || !modelUrl) return;
+    const camera = cameraRef.current;
+    if (!scene || !camera) return;
 
-    if (modelRef.current) {
-      scene.remove(modelRef.current);
-      modelRef.current = null;
-      mixerRef.current = null;
+    const hasBoth = modelUrl && partnerModelUrl;
+
+    if (hasBoth) {
+      camera.position.set(0, 1.0, 5.5);
+      camera.lookAt(0, 0.5, 0);
+    } else {
+      camera.position.set(0, 1.0, 4.5);
+      camera.lookAt(0, 0.6, 0);
+    }
+  }, [modelUrl, partnerModelUrl]);
+
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    loadModel(scene, modelUrl, "self");
+  }, [modelUrl]);
+
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    loadModel(scene, partnerModelUrl, "partner");
+  }, [partnerModelUrl]);
+
+  function loadModel(scene, url, key) {
+    const old = modelsRef.current[key];
+    if (old) {
+      scene.remove(old);
+      modelsRef.current[key] = null;
+      mixersRef.current = mixersRef.current.filter((m) => m._root !== old.userData.innerModel);
     }
 
+    if (!url) return;
+
+    const hasBoth = key === "self" ? url && partnerModelUrl : modelUrl && url;
+    const offsetX = hasBoth ? (key === "self" ? -0.55 : 0.55) : 0;
+    const modelScale = hasBoth ? 1.1 : 1.4;
+
     const loader = new GLTFLoader();
-    loader.load(modelUrl, (gltf) => {
+    loader.load(url, (gltf) => {
       const model = gltf.scene;
 
       const box = new THREE.Box3().setFromObject(model);
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z);
-      const s = 1.4 / maxDim;
+      const s = modelScale / maxDim;
       model.scale.set(s, s, s);
 
       const box2 = new THREE.Box3().setFromObject(model);
@@ -98,21 +137,21 @@ export default function CharacterPreview({ modelUrl }) {
 
       const group = new THREE.Group();
       group.add(model);
+      group.position.x = offsetX;
+      group.userData.innerModel = model;
 
       scene.add(group);
-      modelRef.current = group;
+      modelsRef.current[key] = group;
 
       if (gltf.animations.length > 0) {
         const mixer = new THREE.AnimationMixer(model);
-        gltf.animations.forEach((clip) => {
-          mixer.clipAction(clip).play();
-        });
-        mixerRef.current = mixer;
+        gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
+        mixersRef.current.push(mixer);
       }
 
       timerRef.current = new THREE.Timer();
     });
-  }, [modelUrl]);
+  }
 
   return (
     <div

@@ -179,15 +179,21 @@ export default function CharacterSelect({ onReady, roomId, playerId }) {
             overflow: "hidden",
             borderRadius: 4,
           }}>
-            <CharacterPreview modelUrl={selectedChar.model} />
+            <CharacterPreview
+              modelUrl={selectedChar.model}
+              partnerModelUrl={partnerChar?.model}
+            />
             <div style={{
               position: "absolute", bottom: 8, left: 0, right: 0,
-              textAlign: "center",
-              fontFamily: "var(--font-serif)", fontSize: 14,
-              fontWeight: 700, color: "var(--gold)",
-              textShadow: "0 1px 3px rgba(244,228,193,0.8)",
+              display: "flex", justifyContent: partnerChar ? "space-around" : "center",
+              fontFamily: "var(--font-serif)", fontSize: 13,
+              fontWeight: 700,
+              textShadow: "0 1px 3px rgba(44,36,22,0.6)",
             }}>
-              {selectedChar.name}
+              <span style={{ color: "var(--gold)" }}>{selectedChar.name}</span>
+              {partnerChar && (
+                <span style={{ color: "var(--red)" }}>{partnerChar.name}</span>
+              )}
             </div>
           </div>
         ) : (
