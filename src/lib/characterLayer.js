@@ -115,12 +115,22 @@ export function createCharacterLayer(refLngLat) {
       const lat = this.map.getCenter().lat;
       const targetSize = getTargetSize(zoom, lat);
 
+      const offset = targetSize * 0.8;
+
       Object.entries(this._models).forEach(([key, group]) => {
         if (!group.visible) return;
 
         group.scale.set(targetSize, targetSize, targetSize);
-        group.position.z = Math.sin(time * 1.5) * 2 + 2;
-        group.rotation.y = time * 0.3;
+        group.position.z =
+          Math.sin(time * 1.5 + (key === "partner" ? Math.PI : 0)) * 2 + 2;
+        group.rotation.y =
+          time * 0.3 + (key === "partner" ? Math.PI / 3 : 0);
+
+        const side = key === "self" ? -1 : 1;
+        const baseX = this._positions[key]
+          ? (mapboxgl.MercatorCoordinate.fromLngLat(this._positions[key], 0).x - refCoord.x) / scale
+          : group.position.x;
+        group.position.x = baseX + side * offset;
       });
 
       const m = new THREE.Matrix4().fromArray(matrix);

@@ -121,6 +121,7 @@ export default function MapScreen({ missions, completedMissions, unlockedMission
       charLayerRef.current = charLayer;
 
       charLayer.updatePosition("self", MAP_CENTER);
+      charLayer.updatePosition("partner", MAP_CENTER);
 
       loadedRef.current = true;
       setMapLoaded(true);
@@ -152,8 +153,10 @@ export default function MapScreen({ missions, completedMissions, unlockedMission
     if (!layer || !mapLoaded) return;
 
     const selfModel = myCharacter?.model || "/cute_chick.glb";
+    const partnerModel = partnerCharacter?.model || "/toothless_cute.glb";
     layer.loadModel(selfModel, "self");
-  }, [myCharacter, mapLoaded]);
+    layer.loadModel(partnerModel, "partner");
+  }, [myCharacter, partnerCharacter, mapLoaded]);
 
   useEffect(() => {
     const cleanup = watchPosition((pos) => {
@@ -162,6 +165,7 @@ export default function MapScreen({ missions, completedMissions, unlockedMission
 
       const lngLat = [pos.lng, pos.lat];
       layer.updatePosition("self", lngLat);
+      layer.updatePosition("partner", lngLat);
     });
     return cleanup || undefined;
   }, []);
