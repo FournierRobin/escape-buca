@@ -217,8 +217,6 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture, missionStat
   const [poseIndex, setPoseIndex] = useState(missionState?.poseIndex || 0);
   const [phase, setPhase] = useState(missionState?.phase || "intro");
   const [captured, setCaptured] = useState({});
-  const [guess, setGuess] = useState("");
-  const [guessError, setGuessError] = useState(false);
 
   useEffect(() => {
     if (missionState?.phase && missionState.phase !== phase) {
@@ -257,139 +255,21 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture, missionStat
   }
 
   if (phase === "assembly") {
-    const rebusPhotos = [
-      { key: "peche", label: "?" },
-      { key: "lentilles", label: "?" },
-      { key: "pose_o", label: "?" },
-    ];
-
     return (
       <div className="screen screen-padded" style={{ justifyContent: "space-between" }}>
         <div className="fade-in">
-          <div className="tag">Assemblage</div>
+          <div className="tag">Analyse</div>
           <div className="card" style={{ padding: 20 }}>
             <pre style={{
               fontFamily: "var(--font-cursive)", fontSize: 13,
               lineHeight: 1.8, whiteSpace: "pre-wrap", color: "var(--text)",
-              marginBottom: 16,
             }}>
               {mission.assemblyInstruction}
             </pre>
-
-            <div style={{
-              display: "flex", gap: 8, justifyContent: "center",
-              marginBottom: 16,
-            }}>
-              {rebusPhotos.map((rp) => {
-                const url = photos?.[rp.key];
-                return (
-                  <div key={rp.key} style={{
-                    width: 90, height: 90,
-                    border: "2px solid var(--gold-dim)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    overflow: "hidden", background: "var(--bg-card)",
-                  }}>
-                    {url ? (
-                      <img src={url} alt="" style={{
-                        width: "100%", height: "100%", objectFit: "cover",
-                      }} />
-                    ) : (
-                      <span style={{
-                        fontSize: 24, color: "var(--gold-dim)",
-                        fontFamily: "var(--font-serif)",
-                      }}>
-                        {rp.label}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div style={{
-              display: "flex", justifyContent: "center", gap: 8,
-              fontSize: 20, fontFamily: "var(--font-serif)",
-              fontWeight: 700, color: "var(--gold-dim)",
-              marginBottom: 16,
-            }}>
-              <span>?</span><span>+</span><span>?</span><span>+</span><span>?</span><span>=</span><span>???</span>
-            </div>
           </div>
         </div>
-        <button className="btn-primary" onClick={() => goPhase("guess")} style={{ marginTop: 24 }}>
-          Deviner le mot
-        </button>
-      </div>
-    );
-  }
-
-  if (phase === "guess") {
-    function normalize(s) {
-      return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
-    }
-
-    function handleGuess() {
-      if (normalize(guess) === normalize(mission.correctAnswer)) {
-        goPhase("success");
-      } else {
-        setGuessError(true);
-        setTimeout(() => setGuessError(false), 600);
-      }
-    }
-
-    return (
-      <div className="screen screen-padded" style={{ justifyContent: "space-between" }}>
-        <div className={`fade-in ${guessError ? "shake" : ""}`}>
-          <div className="tag">Rébus</div>
-          <h3 style={{ fontSize: 18, marginBottom: 16, color: "var(--gold)" }}>
-            Quel mot forment ces 3 éléments ?
-          </h3>
-          <div className="card" style={{ padding: 20 }}>
-            <div style={{
-              display: "flex", gap: 8, justifyContent: "center",
-              marginBottom: 20,
-            }}>
-              {["peche", "lentilles", "pose_o"].map((key) => {
-                const url = photos?.[key];
-                return (
-                  <div key={key} style={{
-                    width: 70, height: 70,
-                    border: "2px solid var(--gold-dim)",
-                    overflow: "hidden", background: "var(--bg-card)",
-                  }}>
-                    {url ? (
-                      <img src={url} alt="" style={{
-                        width: "100%", height: "100%", objectFit: "cover",
-                      }} />
-                    ) : (
-                      <div style={{
-                        width: "100%", height: "100%",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 20, color: "var(--gold-dim)",
-                      }}>?</div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <input
-              type="text"
-              value={guess}
-              onChange={(e) => setGuess(e.target.value)}
-              placeholder="Votre réponse..."
-              onKeyDown={(e) => e.key === "Enter" && handleGuess()}
-              style={{
-                width: "100%", padding: "14px 16px",
-                background: "var(--bg-card)", border: "1px solid var(--gold-dim)",
-                color: "var(--text)", fontSize: 18,
-                fontFamily: "var(--font-serif)", fontWeight: 700,
-                textAlign: "center", letterSpacing: 3,
-              }}
-            />
-          </div>
-        </div>
-        <button className="btn-primary" onClick={handleGuess} style={{ marginTop: 24 }}>
-          Valider
+        <button className="btn-primary" onClick={() => goPhase("success")} style={{ marginTop: 24 }}>
+          Continuer
         </button>
       </div>
     );
@@ -441,7 +321,7 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture, missionStat
             <img
               src={currentPose.referenceImage}
               alt="Pose de référence"
-              style={{ width: "100%", maxHeight: 220, objectFit: "cover", display: "block" }}
+              style={{ width: "100%", objectFit: "contain", display: "block" }}
             />
             <div style={{
               position: "absolute", bottom: 0, left: 0, right: 0,

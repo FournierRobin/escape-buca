@@ -16,6 +16,56 @@ import {
   getPlayerId,
 } from "./lib/supabase";
 
+function DevMenu({ screen, onReset, onBackToMap, onGoTo }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div style={{ position: "fixed", top: 8, right: 8, zIndex: 9999 }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: 32, height: 32, borderRadius: "50%",
+          background: "rgba(44,36,22,0.6)", border: "1px solid rgba(139,107,63,0.3)",
+          color: "rgba(139,107,63,0.6)", fontSize: 14, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        ...
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: 36, right: 0,
+          background: "var(--bg)", border: "1px solid var(--gold-dim)",
+          borderRadius: 4, padding: 4, minWidth: 180,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        }}>
+          {screen !== "map" && screen !== "intro" && (
+            <button onClick={() => { onBackToMap(); setOpen(false); }} style={devBtnStyle}>
+              Retour carte
+            </button>
+          )}
+          {missions.map((m, i) => (
+            <button key={m.id} onClick={() => { onGoTo(i); setOpen(false); }} style={devBtnStyle}>
+              → Mission {i + 1}: {m.title}
+            </button>
+          ))}
+          <div style={{ borderTop: "1px solid var(--gold-dim)", margin: "4px 0" }} />
+          <button onClick={() => { onReset(); setOpen(false); }} style={{ ...devBtnStyle, color: "var(--red)" }}>
+            Reset complet
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const devBtnStyle = {
+  display: "block", width: "100%", textAlign: "left",
+  padding: "8px 12px", background: "none", border: "none",
+  color: "var(--text)", fontSize: 12, fontFamily: "var(--font-mono)",
+  cursor: "pointer",
+};
+
 const SCREENS = {
   INTRO: "intro",
   ROOM: "room",
@@ -303,8 +353,24 @@ export default function App() {
     return acc;
   }, []);
 
+  const devGoTo = useCallback((missionIndex) => {
+    const completed = missions.slice(0, missionIndex).map((m) => m.id);
+    setCompletedMissions(completed);
+    setActiveMissionId(null);
+    setScreen(SCREENS.MAP);
+    setMissionState({});
+    missionStateRef.current = {};
+    setBombState({ devicePlayerId: null, manualPlayerId: null, moduleIndex: 0, errors: 0, timerStart: null, status: "idle", mazePos: null, seed: null, attempts: 0 });
+  }, []);
+
   return (
     <>
+      <DevMenu
+        screen={screen}
+        onReset={resetGame}
+        onBackToMap={() => { setActiveMissionId(null); setScreen(SCREENS.MAP); }}
+        onGoTo={devGoTo}
+      />
       {screen === SCREENS.INTRO && (
         <IntroScreen onStart={handleIntroStart} />
       )}
