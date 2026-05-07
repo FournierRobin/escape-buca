@@ -85,7 +85,7 @@ export default function CharacterPreview({ modelUrl, partnerModelUrl }) {
     const hasBoth = modelUrl && partnerModelUrl;
 
     if (hasBoth) {
-      camera.position.set(0, 1.0, 5.5);
+      camera.position.set(0, 1.0, 6.5);
       camera.lookAt(0, 0.5, 0);
     } else {
       camera.position.set(0, 1.0, 4.5);
@@ -118,8 +118,8 @@ export default function CharacterPreview({ modelUrl, partnerModelUrl }) {
     if (!url) return;
 
     const hasBoth = key === "self" ? url && partnerModelUrl : modelUrl && url;
-    const offsetX = hasBoth ? (key === "self" ? -0.55 : 0.55) : 0;
-    const modelScale = hasBoth ? 1.1 : 1.4;
+    const offsetX = hasBoth ? (key === "self" ? -1.05 : 1.05) : 0;
+    const modelScale = hasBoth ? 1.0 : 1.4;
 
     const loader = new GLTFLoader();
     loader.load(url, (gltf) => {

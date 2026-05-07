@@ -12,7 +12,14 @@ export const isSupabaseConfigured = !!supabase;
 export function getPlayerId() {
   let id = sessionStorage.getItem("escape-player-id");
   if (!id) {
-    id = crypto.randomUUID();
+    if (crypto.randomUUID) {
+      id = crypto.randomUUID();
+    } else {
+      id = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+        .replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
+    }
     sessionStorage.setItem("escape-player-id", id);
   }
   return id;

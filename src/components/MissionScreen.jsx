@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
 function PhotoCapture({ photoKey, onCapture, existingUrl }) {
   const inputRef = useRef(null);
@@ -50,15 +50,24 @@ function PhotoCapture({ photoKey, onCapture, existingUrl }) {
   );
 }
 
-function DialogueMission({ mission, onComplete }) {
-  const [stepIndex, setStepIndex] = useState(0);
+function DialogueMission({ mission, onComplete, missionState, onSyncState }) {
+  const [stepIndex, setStepIndex] = useState(missionState?.stepIndex || 0);
+
+  useEffect(() => {
+    if (missionState?.stepIndex !== undefined && missionState.stepIndex !== stepIndex) {
+      setStepIndex(missionState.stepIndex);
+    }
+  }, [missionState?.stepIndex]);
+
   const step = mission.steps[stepIndex];
 
   function handleNext() {
     if (step.isSuccess) {
       onComplete();
     } else if (stepIndex < mission.steps.length - 1) {
-      setStepIndex(stepIndex + 1);
+      const next = stepIndex + 1;
+      setStepIndex(next);
+      onSyncState?.({ stepIndex: next });
     }
   }
 
@@ -85,10 +94,24 @@ function DialogueMission({ mission, onComplete }) {
   );
 }
 
-function RebusMission({ mission, onComplete, photos, onPhotoCapture }) {
-  const [targetIndex, setTargetIndex] = useState(0);
-  const [phase, setPhase] = useState("intro");
+function RebusMission({ mission, onComplete, photos, onPhotoCapture, missionState, onSyncState }) {
+  const [targetIndex, setTargetIndex] = useState(missionState?.targetIndex || 0);
+  const [phase, setPhase] = useState(missionState?.phase || "intro");
   const [captured, setCaptured] = useState({});
+
+  useEffect(() => {
+    if (missionState?.phase && missionState.phase !== phase) {
+      setPhase(missionState.phase);
+    }
+    if (missionState?.targetIndex !== undefined && missionState.targetIndex !== targetIndex) {
+      setTargetIndex(missionState.targetIndex);
+    }
+  }, [missionState?.phase, missionState?.targetIndex]);
+
+  function goPhase(p, extras) {
+    setPhase(p);
+    onSyncState?.({ phase: p, ...extras });
+  }
 
   if (phase === "intro") {
     return (
@@ -105,7 +128,7 @@ function RebusMission({ mission, onComplete, photos, onPhotoCapture }) {
             </pre>
           </div>
         </div>
-        <button className="btn-primary" onClick={() => setPhase("hunt")} style={{ marginTop: 24 }}>
+        <button className="btn-primary" onClick={() => goPhase("hunt", { targetIndex: 0 })} style={{ marginTop: 24 }}>
           Lancer la chasse
         </button>
       </div>
@@ -167,9 +190,11 @@ function RebusMission({ mission, onComplete, photos, onPhotoCapture }) {
             className="btn-primary"
             onClick={() => {
               if (targetIndex < mission.targets.length - 1) {
-                setTargetIndex(targetIndex + 1);
+                const next = targetIndex + 1;
+                setTargetIndex(next);
+                onSyncState?.({ targetIndex: next });
               } else {
-                setPhase("done");
+                goPhase("done");
               }
             }}
           >
@@ -188,12 +213,26 @@ function RebusMission({ mission, onComplete, photos, onPhotoCapture }) {
   );
 }
 
-function PhotoMission({ mission, onComplete, photos, onPhotoCapture }) {
-  const [poseIndex, setPoseIndex] = useState(0);
-  const [phase, setPhase] = useState("intro");
+function PhotoMission({ mission, onComplete, photos, onPhotoCapture, missionState, onSyncState }) {
+  const [poseIndex, setPoseIndex] = useState(missionState?.poseIndex || 0);
+  const [phase, setPhase] = useState(missionState?.phase || "intro");
   const [captured, setCaptured] = useState({});
   const [guess, setGuess] = useState("");
   const [guessError, setGuessError] = useState(false);
+
+  useEffect(() => {
+    if (missionState?.phase && missionState.phase !== phase) {
+      setPhase(missionState.phase);
+    }
+    if (missionState?.poseIndex !== undefined && missionState.poseIndex !== poseIndex) {
+      setPoseIndex(missionState.poseIndex);
+    }
+  }, [missionState?.phase, missionState?.poseIndex]);
+
+  function goPhase(p, extras) {
+    setPhase(p);
+    onSyncState?.({ phase: p, ...extras });
+  }
 
   if (phase === "intro") {
     return (
@@ -210,7 +249,7 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture }) {
             </pre>
           </div>
         </div>
-        <button className="btn-primary" onClick={() => setPhase("poses")} style={{ marginTop: 24 }}>
+        <button className="btn-primary" onClick={() => goPhase("poses", { poseIndex: 0 })} style={{ marginTop: 24 }}>
           C'est parti
         </button>
       </div>
@@ -277,7 +316,7 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture }) {
             </div>
           </div>
         </div>
-        <button className="btn-primary" onClick={() => setPhase("guess")} style={{ marginTop: 24 }}>
+        <button className="btn-primary" onClick={() => goPhase("guess")} style={{ marginTop: 24 }}>
           Deviner le mot
         </button>
       </div>
@@ -291,7 +330,7 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture }) {
 
     function handleGuess() {
       if (normalize(guess) === normalize(mission.correctAnswer)) {
-        setPhase("success");
+        goPhase("success");
       } else {
         setGuessError(true);
         setTimeout(() => setGuessError(false), 600);
@@ -381,7 +420,7 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture }) {
 
   const currentPose = mission.poses[poseIndex];
   if (!currentPose) {
-    setTimeout(() => setPhase("assembly"), 300);
+    setTimeout(() => goPhase("assembly"), 300);
     return null;
   }
 
@@ -440,9 +479,11 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture }) {
             className="btn-primary"
             onClick={() => {
               if (poseIndex < mission.poses.length - 1) {
-                setPoseIndex(poseIndex + 1);
+                const next = poseIndex + 1;
+                setPoseIndex(next);
+                onSyncState?.({ poseIndex: next });
               } else {
-                setPhase("assembly");
+                goPhase("assembly");
               }
             }}
           >
@@ -461,8 +502,14 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture }) {
   );
 }
 
-function BombIntro({ mission, onStartBomb, onBack }) {
-  const [showRule, setShowRule] = useState(false);
+function BombIntro({ mission, onStartBomb, onBack, missionState, onSyncState }) {
+  const [showRule, setShowRule] = useState(missionState?.showRule || false);
+
+  useEffect(() => {
+    if (missionState?.showRule !== undefined && missionState.showRule !== showRule) {
+      setShowRule(missionState.showRule);
+    }
+  }, [missionState?.showRule]);
 
   if (!showRule) {
     return (
@@ -481,7 +528,7 @@ function BombIntro({ mission, onStartBomb, onBack }) {
           </div>
         </div>
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
-          <button className="btn-primary" onClick={() => setShowRule(true)}>
+          <button className="btn-primary" onClick={() => { setShowRule(true); onSyncState?.({ showRule: true }); }}>
             Continuer
           </button>
           <button className="btn-ghost" onClick={onBack}>
@@ -520,9 +567,9 @@ function BombIntro({ mission, onStartBomb, onBack }) {
   );
 }
 
-export default function MissionScreen({ mission, onComplete, onStartBomb, onBack, photos, onPhotoCapture }) {
+export default function MissionScreen({ mission, onComplete, onStartBomb, onBack, photos, onPhotoCapture, missionState, onSyncState }) {
   if (mission.type === "coop-bomb") {
-    return <BombIntro mission={mission} onStartBomb={onStartBomb} onBack={onBack} />;
+    return <BombIntro mission={mission} onStartBomb={onStartBomb} onBack={onBack} missionState={missionState} onSyncState={onSyncState} />;
   }
 
   if (mission.type === "rebus") {
@@ -532,6 +579,8 @@ export default function MissionScreen({ mission, onComplete, onStartBomb, onBack
         onComplete={onComplete}
         photos={photos}
         onPhotoCapture={onPhotoCapture}
+        missionState={missionState}
+        onSyncState={onSyncState}
       />
     );
   }
@@ -543,9 +592,18 @@ export default function MissionScreen({ mission, onComplete, onStartBomb, onBack
         onComplete={onComplete}
         photos={photos}
         onPhotoCapture={onPhotoCapture}
+        missionState={missionState}
+        onSyncState={onSyncState}
       />
     );
   }
 
-  return <DialogueMission mission={mission} onComplete={onComplete} />;
+  return (
+    <DialogueMission
+      mission={mission}
+      onComplete={onComplete}
+      missionState={missionState}
+      onSyncState={onSyncState}
+    />
+  );
 }

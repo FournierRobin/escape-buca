@@ -45,7 +45,7 @@ export const missions = [
       text: "MISSION CRITIQUE — LA BOMBE DE BUCAREST\n\nUn dispositif logique a été détecté près du CEC Palace.\nIl ne menace pas vraiment Bucarest.\nMais il pourrait sérieusement endommager la réputation de Sherlock.\n\nCette mission nécessite deux rôles.",
       rule: "Règle absolue :\nMariarty ne doit pas voir le manuel.\nSherlock ne doit pas voir la bombe.\n\nCommuniquez clairement.\nOu faites exploser diplomatiquement Bucarest.",
     },
-    timerSeconds: 420,
+    timerSeconds: 300,
     maxErrors: 3,
     successText: "Bombe désamorcée.\n\nRésultat :\n- Bucarest est sauvée.\n- Mariarty est officiellement dangereuse avec un téléphone.\n- Sherlock a récupéré un indice.\n\nINDICE : PASSAGE JAUNE",
     failText: "BOUM.\n\nExplosion purement administrative.\nAucun dégât, sauf dans le dossier de réputation de Sherlock.\n\nMode secours activé :\nla bombe révèle quand même l'indice,\nparce que Mariarty avait presque raison.",

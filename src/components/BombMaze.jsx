@@ -8,21 +8,29 @@ function hasWall(walls, r1, c1, r2, c2) {
   );
 }
 
-export default function BombMaze({ module, onSuccess, onError }) {
+function isSharedWall(wallsA, wallsB, r1, c1, r2, c2) {
+  return hasWall(wallsA, r1, c1, r2, c2) && hasWall(wallsB, r1, c1, r2, c2);
+}
+
+export default function BombMaze({ module, onSuccess, onError, onMoveSync }) {
   const { gridSize, start, end, wallsDevice } = module.device;
+  const wallsManual = module.manual?.wallsManual || [];
   const [pos, setPos] = useState([...start]);
   const [shaking, setShaking] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
   const cellSize = Math.min(60, (window.innerWidth - 80) / gridSize);
 
   const move = useCallback((dr, dc) => {
+    if (completed) return;
+
     const [r, c] = pos;
     const nr = r + dr;
     const nc = c + dc;
 
     if (nr < 0 || nr >= gridSize || nc < 0 || nc >= gridSize) return;
 
-    if (hasWall(wallsDevice, r, c, nr, nc)) {
+    if (isSharedWall(wallsDevice, wallsManual, r, c, nr, nc)) {
       setShaking(true);
       onError();
       setTimeout(() => setShaking(false), 400);
@@ -31,11 +39,13 @@ export default function BombMaze({ module, onSuccess, onError }) {
 
     const newPos = [nr, nc];
     setPos(newPos);
+    onMoveSync?.(newPos);
 
     if (nr === end[0] && nc === end[1]) {
+      setCompleted(true);
       onSuccess();
     }
-  }, [pos, gridSize, wallsDevice, end, onSuccess, onError]);
+  }, [completed, pos, gridSize, wallsDevice, wallsManual, end, onSuccess, onError, onMoveSync]);
 
   return (
     <div className={`fade-in ${shaking ? "shake" : ""}`}>
@@ -94,7 +104,7 @@ export default function BombMaze({ module, onSuccess, onError }) {
             cx={pos[1] * cellSize + cellSize / 2}
             cy={pos[0] * cellSize + cellSize / 2}
             r={cellSize / 3.5}
-            fill="var(--green)"
+            fill={completed ? "var(--gold)" : "var(--green)"}
           />
         </svg>
       </div>

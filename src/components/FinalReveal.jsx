@@ -1,18 +1,27 @@
 import { useState, useEffect } from "react";
 import { watchPosition, isNearby } from "../lib/geolocation";
 
-export default function FinalReveal({ mission, onComplete }) {
-  const [phase, setPhase] = useState("arrival");
+export default function FinalReveal({ mission, onComplete, missionState, onSyncState }) {
+  const [phase, setPhase] = useState(missionState?.phase || "arrival");
   const [userPos, setUserPos] = useState(null);
-  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    if (missionState?.phase && missionState.phase !== phase) {
+      setPhase(missionState.phase);
+    }
+  }, [missionState?.phase]);
+
+  function goPhase(p) {
+    setPhase(p);
+    onSyncState?.({ phase: p });
+  }
 
   useEffect(() => {
     if (phase !== "map") return;
     const cleanup = watchPosition((pos) => {
       setUserPos(pos);
       if (isNearby(pos.lat, pos.lng, mission.coordinates[0], mission.coordinates[1], mission.radiusMeters)) {
-        setRevealed(true);
-        setPhase("reveal");
+        goPhase("reveal");
       }
     });
     return cleanup || undefined;
@@ -34,7 +43,7 @@ export default function FinalReveal({ mission, onComplete }) {
             </pre>
           </div>
         </div>
-        <button className="btn-primary" onClick={() => setPhase("map")} style={{ marginTop: 24 }}>
+        <button className="btn-primary" onClick={() => goPhase("map")} style={{ marginTop: 24 }}>
           Afficher le marqueur final
         </button>
       </div>
@@ -72,7 +81,7 @@ export default function FinalReveal({ mission, onComplete }) {
               GPS actif — en attente de proximité...
             </p>
           )}
-          <button className="btn-ghost" onClick={() => setPhase("reveal")}>
+          <button className="btn-ghost" onClick={() => goPhase("reveal")}>
             Sherlock valide le pédalo manuellement
           </button>
         </div>
@@ -94,7 +103,7 @@ export default function FinalReveal({ mission, onComplete }) {
             </pre>
           </div>
           <div className="divider">✦</div>
-          <button className="btn-primary" onClick={() => setPhase("reward")} style={{ marginTop: 16 }}>
+          <button className="btn-primary" onClick={() => goPhase("reward")} style={{ marginTop: 16 }}>
             Voir la récompense
           </button>
         </div>

@@ -53,12 +53,18 @@ export default function App() {
   const [myCharacterId, setMyCharacterId] = useState(saved?.myCharacterId || null);
   const [partnerCharacterId, setPartnerCharacterId] = useState(saved?.partnerCharacterId || null);
   const [photos, setPhotos] = useState(saved?.photos || {});
+  const [missionState, setMissionState] = useState({});
+  const missionStateRef = useRef({});
   const [bombState, setBombState] = useState({
     devicePlayerId: null,
+    manualPlayerId: null,
     moduleIndex: 0,
     errors: 0,
     timerStart: null,
     status: "idle",
+    mazePos: null,
+    seed: null,
+    attempts: 0,
   });
 
   useEffect(() => {
@@ -96,6 +102,11 @@ export default function App() {
         setPhotos((prev) => ({ ...prev, ...state.photos }));
       }
 
+      if (state.missionState !== undefined) {
+        missionStateRef.current = state.missionState;
+        setMissionState(state.missionState);
+      }
+
       if (state.screen === "character-select") {
         setScreen(SCREENS.CHARACTER_SELECT);
       } else if (state.screen === "map") {
@@ -117,18 +128,23 @@ export default function App() {
         }
       } else if (state.screen === "bomb") {
         setActiveMissionId("cec-bomb");
-        const iAmDevice = state.bombDevicePlayerId === playerId;
+        const iAmDevice = state.bombDevicePlayerId === playerId ||
+          (state.bombManualPlayerId && state.bombManualPlayerId !== playerId);
         setScreen(iAmDevice ? SCREENS.BOMB_DEVICE : SCREENS.BOMB_MANUAL);
       }
 
-      if (state.bombDevicePlayerId !== undefined) {
+      if (state.bombDevicePlayerId !== undefined || state.bombManualPlayerId !== undefined) {
         setBombState((prev) => ({
           ...prev,
-          devicePlayerId: state.bombDevicePlayerId,
+          devicePlayerId: state.bombDevicePlayerId ?? prev.devicePlayerId,
+          manualPlayerId: state.bombManualPlayerId ?? prev.manualPlayerId,
           moduleIndex: state.bombModuleIndex ?? prev.moduleIndex,
           errors: state.bombErrors ?? prev.errors,
           timerStart: state.bombTimerStart ?? prev.timerStart,
           status: state.bombStatus ?? prev.status,
+          mazePos: state.bombMazePos ?? prev.mazePos,
+          seed: state.bombSeed ?? prev.seed,
+          attempts: state.bombAttempts ?? prev.attempts,
         }));
       }
     });
@@ -144,7 +160,9 @@ export default function App() {
     setMyCharacterId(null);
     setPartnerCharacterId(null);
     setPhotos({});
-    setBombState({ devicePlayerId: null, moduleIndex: 0, errors: 0, timerStart: null, status: "idle" });
+    setMissionState({});
+    missionStateRef.current = {};
+    setBombState({ devicePlayerId: null, manualPlayerId: null, moduleIndex: 0, errors: 0, timerStart: null, status: "idle", mazePos: null, seed: null, attempts: 0 });
   }, []);
 
   const completeMission = useCallback((missionId) => {
@@ -156,10 +174,13 @@ export default function App() {
         screen: "map",
         activeMissionId: null,
         bombDevicePlayerId: null,
+        bombManualPlayerId: null,
         bombModuleIndex: 0,
         bombErrors: 0,
         bombTimerStart: null,
         bombStatus: "idle",
+        bombSeed: null,
+        bombAttempts: 0,
       });
       return next;
     });
@@ -167,10 +188,19 @@ export default function App() {
     setScreen(SCREENS.MAP);
   }, [syncToRoom]);
 
+  const syncMissionState = useCallback((patch) => {
+    const next = { ...missionStateRef.current, ...patch };
+    missionStateRef.current = next;
+    setMissionState(next);
+    syncToRoom({ missionState: next });
+  }, [syncToRoom]);
+
   const openMission = useCallback((missionId) => {
     const mission = missions.find((m) => m.id === missionId);
     if (!mission) return;
 
+    missionStateRef.current = {};
+    setMissionState({});
     setActiveMissionId(missionId);
     if (mission.type === "gps-final") {
       setScreen(SCREENS.FINAL);
@@ -181,23 +211,32 @@ export default function App() {
   }, [syncToRoom]);
 
   const startBomb = useCallback((role) => {
-    const devicePid = role === "device" ? playerId : "__other__";
+    const devicePid = role === "device" ? playerId : null;
+    const manualPid = role === "manual" ? playerId : null;
     const timerStart = Date.now();
+    const seed = timerStart;
     setBombState({
       devicePlayerId: devicePid,
+      manualPlayerId: manualPid,
       moduleIndex: 0,
       errors: 0,
       timerStart,
       status: "active",
+      mazePos: null,
+      seed,
+      attempts: 0,
     });
     setScreen(role === "device" ? SCREENS.BOMB_DEVICE : SCREENS.BOMB_MANUAL);
     syncToRoom({
       screen: "bomb",
       bombDevicePlayerId: devicePid,
+      bombManualPlayerId: manualPid,
       bombModuleIndex: 0,
       bombErrors: 0,
       bombTimerStart: timerStart,
       bombStatus: "active",
+      bombSeed: seed,
+      bombAttempts: 0,
     });
   }, [playerId, syncToRoom]);
 
@@ -207,6 +246,9 @@ export default function App() {
     if (patch.moduleIndex !== undefined) roomPatch.bombModuleIndex = patch.moduleIndex;
     if (patch.errors !== undefined) roomPatch.bombErrors = patch.errors;
     if (patch.status !== undefined) roomPatch.bombStatus = patch.status;
+    if (patch.mazePos !== undefined) roomPatch.bombMazePos = patch.mazePos;
+    if (patch.timerStart !== undefined) roomPatch.bombTimerStart = patch.timerStart;
+    if (patch.attempts !== undefined) roomPatch.bombAttempts = patch.attempts;
     if (Object.keys(roomPatch).length > 0) {
       syncToRoom(roomPatch);
     }
@@ -299,6 +341,8 @@ export default function App() {
           onBack={() => { setScreen(SCREENS.MAP); syncToRoom({ screen: "map", activeMissionId: null }); }}
           photos={photos}
           onPhotoCapture={handlePhotoCapture}
+          missionState={missionState}
+          onSyncState={syncMissionState}
         />
       )}
 
@@ -315,6 +359,8 @@ export default function App() {
         <FinalReveal
           mission={activeMission}
           onComplete={() => completeMission(activeMission.id)}
+          missionState={missionState}
+          onSyncState={syncMissionState}
         />
       )}
     </>
