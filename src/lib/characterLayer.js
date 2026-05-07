@@ -115,36 +115,12 @@ export function createCharacterLayer(refLngLat) {
       const lat = this.map.getCenter().lat;
       const targetSize = getTargetSize(zoom, lat);
 
-      const metersPerPixel =
-        (156543.03392 * Math.cos((lat * Math.PI) / 180)) / Math.pow(2, zoom);
-      const separationUnits = Math.max(5, 18 * metersPerPixel);
-
       Object.entries(this._models).forEach(([key, group]) => {
         if (!group.visible) return;
 
         group.scale.set(targetSize, targetSize, targetSize);
-        group.position.z =
-          Math.sin(time * 1.5 + (key === "partner" ? Math.PI : 0)) * 2 + 2;
-        group.rotation.y =
-          time * 0.3 + (key === "partner" ? Math.PI / 3 : 0);
-
-        if (key === "partner") {
-          const selfPos = this._positions["self"];
-          const partnerPos = this._positions["partner"];
-          if (selfPos && partnerPos) {
-            const selfMerc = mapboxgl.MercatorCoordinate.fromLngLat(selfPos, 0);
-            const partnerMerc = mapboxgl.MercatorCoordinate.fromLngLat(partnerPos, 0);
-
-            const dx = (partnerMerc.x - selfMerc.x) / scale;
-            const dy = (selfMerc.y - partnerMerc.y) / scale;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < separationUnits) {
-              group.position.x =
-                (selfMerc.x - refCoord.x) / scale + separationUnits;
-            }
-          }
-        }
+        group.position.z = Math.sin(time * 1.5) * 2 + 2;
+        group.rotation.y = time * 0.3;
       });
 
       const m = new THREE.Matrix4().fromArray(matrix);
