@@ -383,20 +383,47 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture, missionStat
 }
 
 function BombIntro({ mission, onStartBomb, onBack, missionState, onSyncState }) {
-  const [showRule, setShowRule] = useState(missionState?.showRule || false);
+  const [phase, setPhase] = useState(missionState?.bombIntroPhase || "chill");
 
   useEffect(() => {
-    if (missionState?.showRule !== undefined && missionState.showRule !== showRule) {
-      setShowRule(missionState.showRule);
+    if (missionState?.bombIntroPhase && missionState.bombIntroPhase !== phase) {
+      setPhase(missionState.bombIntroPhase);
     }
-  }, [missionState?.showRule]);
+  }, [missionState?.bombIntroPhase]);
 
-  if (!showRule) {
+  function goPhase(p) {
+    setPhase(p);
+    onSyncState?.({ bombIntroPhase: p });
+  }
+
+  if (phase === "chill") {
     return (
       <div className="screen screen-padded" style={{ justifyContent: "space-between" }}>
         <div className="fade-in">
           <div className="tag">{mission.locationName}</div>
           <h2 style={{ fontSize: 20, marginBottom: 20 }}>{mission.title}</h2>
+          <div className="card" style={{ padding: 20 }}>
+            <div className="pin" />
+            <pre style={{
+              fontFamily: "var(--font-cursive)", fontSize: 14,
+              lineHeight: 1.8, whiteSpace: "pre-wrap", color: "var(--text)",
+            }}>
+              {"Aaaah on est pas bien le matin, y'a dégun, pas un casse couille..."}
+            </pre>
+          </div>
+        </div>
+        <button className="btn-primary" onClick={() => goPhase("alert")} style={{ marginTop: 24 }}>
+          Profiter du moment
+        </button>
+      </div>
+    );
+  }
+
+  if (phase === "alert") {
+    return (
+      <div className="screen screen-padded" style={{ justifyContent: "space-between" }}>
+        <div className="fade-in shake">
+          <div className="tag" style={{ borderColor: "var(--red)", color: "var(--red)" }}>Alerte générale</div>
           <div className="card" style={{ padding: 20 }}>
             <div className="pin" />
             <pre style={{
@@ -408,7 +435,7 @@ function BombIntro({ mission, onStartBomb, onBack, missionState, onSyncState }) 
           </div>
         </div>
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
-          <button className="btn-primary" onClick={() => { setShowRule(true); onSyncState?.({ showRule: true }); }}>
+          <button className="btn-primary" onClick={() => goPhase("rule")}>
             Continuer
           </button>
           <button className="btn-ghost" onClick={onBack}>
@@ -446,6 +473,7 @@ function BombIntro({ mission, onStartBomb, onBack, missionState, onSyncState }) 
     </div>
   );
 }
+
 
 export default function MissionScreen({ mission, onComplete, onStartBomb, onBack, photos, onPhotoCapture, missionState, onSyncState }) {
   if (mission.type === "coop-bomb") {

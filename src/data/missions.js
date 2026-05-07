@@ -34,8 +34,8 @@ export const missions = [
   },
   {
     id: "cec-bomb",
-    title: "La Bombe de Bucarest",
-    mapTitle: "Mission critique",
+    title: "Reconnaissance des lieux",
+    mapTitle: "Reconnaissance",
     locationName: "CEC Palace",
     coordinates: [44.43196, 26.09702],
     radiusMeters: 50,
