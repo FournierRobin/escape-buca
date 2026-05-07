@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { watchPosition, isNearby } from "../lib/geolocation";
 
-export default function FinalReveal({ mission, onComplete, missionState, onSyncState }) {
+function normalize(str) {
+  return str.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+export default function FinalReveal({ mission, onComplete, missionState, onSyncState, photos }) {
   const [phase, setPhase] = useState(missionState?.phase || "arrival");
-  const [userPos, setUserPos] = useState(null);
+  const [guess, setGuess] = useState("");
 
   useEffect(() => {
     if (missionState?.phase && missionState.phase !== phase) {
@@ -16,16 +19,7 @@ export default function FinalReveal({ mission, onComplete, missionState, onSyncS
     onSyncState?.({ phase: p });
   }
 
-  useEffect(() => {
-    if (phase !== "map") return;
-    const cleanup = watchPosition((pos) => {
-      setUserPos(pos);
-      if (isNearby(pos.lat, pos.lng, mission.coordinates[0], mission.coordinates[1], mission.radiusMeters)) {
-        goPhase("reveal");
-      }
-    });
-    return cleanup || undefined;
-  }, [phase, mission]);
+  const isCorrect = normalize(guess) === "pedalo";
 
   if (phase === "arrival") {
     return (
@@ -42,47 +36,93 @@ export default function FinalReveal({ mission, onComplete, missionState, onSyncS
               {mission.arrivalText}
             </pre>
           </div>
+
+          {mission.photoKeys && (
+            <div style={{
+              display: "flex", gap: 8, justifyContent: "center",
+              marginTop: 20, marginBottom: 20,
+            }}>
+              {mission.photoKeys.map((key) => (
+                <div key={key} style={{
+                  width: 100, height: 100,
+                  border: "1px solid var(--gold-dim)",
+                  borderRadius: 4,
+                  overflow: "hidden",
+                  background: "var(--bg-card)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {photos?.[key] ? (
+                    <img
+                      src={photos[key]}
+                      alt={key}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <span style={{
+                      fontSize: 11, color: "var(--text-dim)",
+                      fontFamily: "var(--font-mono)", textAlign: "center", padding: 4,
+                    }}>
+                      ?
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ marginTop: 8, textAlign: "center" }}>
+            <input
+              type="text"
+              value={guess}
+              onChange={(e) => setGuess(e.target.value)}
+              placeholder="Quel mot se cache ici ?"
+              style={{
+                width: "100%",
+                maxWidth: 260,
+                padding: "12px 16px",
+                fontSize: 18,
+                fontFamily: "var(--font-mono)",
+                textAlign: "center",
+                background: "var(--bg-card)",
+                color: "var(--text)",
+                border: isCorrect ? "2px solid var(--green)" : "1px solid var(--gold-dim)",
+                borderRadius: 4,
+                letterSpacing: 4,
+                textTransform: "uppercase",
+              }}
+            />
+          </div>
         </div>
-        <button className="btn-primary" onClick={() => goPhase("map")} style={{ marginTop: 24 }}>
-          Afficher le marqueur final
+        <button
+          className="btn-primary"
+          onClick={() => goPhase("solved")}
+          disabled={!isCorrect}
+          style={{ marginTop: 24, opacity: isCorrect ? 1 : 0.4 }}
+        >
+          Valider
         </button>
       </div>
     );
   }
 
-  if (phase === "map") {
+  if (phase === "solved") {
     return (
       <div className="screen screen-padded screen-center">
         <div className="fade-in" style={{ maxWidth: 340 }}>
-          <div className="tag pulse">En route</div>
-          <div style={{
-            width: 80, height: 80, borderRadius: "50%",
-            border: "3px solid var(--red)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 36, margin: "0 auto 20px",
-            color: "var(--red)",
-            boxShadow: "0 0 0 6px rgba(139,26,26,0.1)",
-          }}>
-            ★
+          <div className="tag text-green" style={{ borderColor: "var(--green)", color: "var(--green)" }}>
+            Mot trouvé
           </div>
-          <div className="card" style={{ padding: 20, textAlign: "left" }}>
+          <h2 style={{ fontSize: 24, marginBottom: 20, letterSpacing: 6 }}>PÉDALO</h2>
+          <div className="card" style={{ padding: 20 }}>
             <pre style={{
               fontFamily: "var(--font-cursive)", fontSize: 13,
               lineHeight: 1.8, whiteSpace: "pre-wrap", color: "var(--text)",
             }}>
-              {mission.mapText}
+              {mission.solvedText}
             </pre>
           </div>
-          {userPos && (
-            <p style={{
-              fontSize: 11, color: "var(--text-dim)", marginBottom: 16,
-              fontFamily: "var(--font-cursive)",
-            }}>
-              GPS actif — en attente de proximité...
-            </p>
-          )}
-          <button className="btn-ghost" onClick={() => goPhase("reveal")}>
-            Sherlock valide le pédalo manuellement
+          <button className="btn-primary" onClick={() => goPhase("reveal")} style={{ marginTop: 24 }}>
+            Continuer
           </button>
         </div>
       </div>
@@ -103,8 +143,8 @@ export default function FinalReveal({ mission, onComplete, missionState, onSyncS
             </pre>
           </div>
           <div className="divider">✦</div>
-          <button className="btn-primary" onClick={() => goPhase("reward")} style={{ marginTop: 16 }}>
-            Voir la récompense
+          <button className="btn-ghost" onClick={() => goPhase("reward")} style={{ marginTop: 16 }}>
+            Sherlock active manuellement
           </button>
         </div>
       </div>

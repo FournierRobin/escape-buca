@@ -361,6 +361,7 @@ export default function App() {
           onComplete={() => completeMission(activeMission.id)}
           missionState={missionState}
           onSyncState={syncMissionState}
+          photos={photos}
         />
       )}
     </>

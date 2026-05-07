@@ -790,7 +790,7 @@ export default function BombScreen({ role, bombState, onUpdateBomb, onComplete }
               fontFamily: "var(--font-cursive)", fontSize: 13,
               lineHeight: 1.8, whiteSpace: "pre-wrap", color: "var(--text)",
             }}>
-              {"Bombe désamorcée.\n\nRésultat :\n- Bucarest est sauvée.\n- Mariarty est officiellement dangereuse avec un téléphone.\n- Sherlock a récupéré un indice.\n\nINDICE : PASSAGE JAUNE"}
+              {"Bombe désamorcée.\n\nBucarest pourra dormir sur ses 2 oreilles ce soir.\nSherlock a récupéré un indice.\n\nINDICE : PASSAGE JAUNE"}
             </pre>
           </div>
           <button className="btn-primary" onClick={onComplete}>

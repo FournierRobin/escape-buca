@@ -115,7 +115,7 @@ export function createCharacterLayer(refLngLat) {
       const lat = this.map.getCenter().lat;
       const targetSize = getTargetSize(zoom, lat);
 
-      const offset = targetSize * 0.8;
+      const offset = targetSize * 0.35;
 
       Object.entries(this._models).forEach(([key, group]) => {
         if (!group.visible) return;
