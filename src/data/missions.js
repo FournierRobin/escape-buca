@@ -167,6 +167,6 @@ export const missions = [
     arrivalText: "Coordonnées reçues.\nPoint étrange...",
     solvedText: "Mais oui... tout prend sens !\nPassez à l'étape suivante quand vous serez au point de ralliement.",
     finalMessage: "MISSION ACCOMPLIE\n\nLa vérité :\non cherchait juste une excuse\npour faire du pédalo avec Mariarty.\n\nBucarest est sauvée.\nL'enquête est close.\nBravo à vous deux !",
-    reward: "BON OFFICIEL\n\nMariarty gagne :\nune activité ou un resto de son choix.\n\nValidité : jusqu'à ce que Sherlock\nfasse semblant d'avoir oublié.",
+    reward: "BON OFFICIEL\n\nMariarty gagne :\nune activité ou un resto de son choix \n(et un gros pizou mais ça c'est gratuit)\n\nValidité : jusqu'à ce que je \nfasse semblant d'avoir oublié.",
   },
 ];
