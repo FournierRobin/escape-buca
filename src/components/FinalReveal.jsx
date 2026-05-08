@@ -5,11 +5,13 @@ function normalize(str) {
 }
 
 export default function FinalReveal({ mission, onComplete, missionState, onSyncState, photos }) {
-  const [phase, setPhase] = useState(missionState?.phase || "arrival");
+  const validPhases = ["arrival", "solved", "reveal", "reward"];
+  const initPhase = validPhases.includes(missionState?.phase) ? missionState.phase : "arrival";
+  const [phase, setPhase] = useState(initPhase);
   const [guess, setGuess] = useState("");
 
   useEffect(() => {
-    if (missionState?.phase && missionState.phase !== phase) {
+    if (missionState?.phase && validPhases.includes(missionState.phase) && missionState.phase !== phase) {
       setPhase(missionState.phase);
     }
   }, [missionState?.phase, phase]);

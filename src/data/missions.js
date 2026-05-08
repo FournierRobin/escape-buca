@@ -72,7 +72,7 @@ export const missions = [
       },
       {
         id: "reveal",
-        text: "RAS.\n\nC'était juste Marion qui se baladait dans le passage...\n\nJe comprends, c'est à s'y méprendre.\nJ'aurais presque pu lancer l'alerte moi-même...\nMais passons ahah.",
+        text: "RAS.\n\nC'était juste Mariarty qui se baladait dans le passage...\n\nJe comprends, c'est à s'y méprendre.\nJ'aurais presque pu lancer l'alerte moi-même...\nMais passons... 🥵",
         button: "Continuer",
       },
       {

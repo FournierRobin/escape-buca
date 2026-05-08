@@ -95,12 +95,14 @@ function DialogueMission({ mission, onComplete, missionState, onSyncState }) {
 }
 
 function RebusMission({ mission, onComplete, photos, onPhotoCapture, missionState, onSyncState }) {
+  const validPhases = ["intro", "targets", "done"];
+  const initPhase = validPhases.includes(missionState?.phase) ? missionState.phase : "intro";
   const [targetIndex, setTargetIndex] = useState(missionState?.targetIndex || 0);
-  const [phase, setPhase] = useState(missionState?.phase || "intro");
+  const [phase, setPhase] = useState(initPhase);
   const [captured, setCaptured] = useState({});
 
   useEffect(() => {
-    if (missionState?.phase && missionState.phase !== phase) {
+    if (missionState?.phase && validPhases.includes(missionState.phase) && missionState.phase !== phase) {
       setPhase(missionState.phase);
     }
     if (missionState?.targetIndex !== undefined && missionState.targetIndex !== targetIndex) {
@@ -214,12 +216,14 @@ function RebusMission({ mission, onComplete, photos, onPhotoCapture, missionStat
 }
 
 function PhotoMission({ mission, onComplete, photos, onPhotoCapture, missionState, onSyncState }) {
+  const validPhases = ["intro", "poses", "assembly", "success"];
+  const initPhase = validPhases.includes(missionState?.phase) ? missionState.phase : "intro";
   const [poseIndex, setPoseIndex] = useState(missionState?.poseIndex || 0);
-  const [phase, setPhase] = useState(missionState?.phase || "intro");
+  const [phase, setPhase] = useState(initPhase);
   const [captured, setCaptured] = useState({});
 
   useEffect(() => {
-    if (missionState?.phase && missionState.phase !== phase) {
+    if (missionState?.phase && validPhases.includes(missionState.phase) && missionState.phase !== phase) {
       setPhase(missionState.phase);
     }
     if (missionState?.poseIndex !== undefined && missionState.poseIndex !== poseIndex) {
@@ -383,10 +387,12 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture, missionStat
 }
 
 function BombIntro({ mission, onStartBomb, onBack, missionState, onSyncState }) {
-  const [phase, setPhase] = useState(missionState?.bombIntroPhase || "chill");
+  const validPhases = ["chill", "alert", "rule"];
+  const initPhase = validPhases.includes(missionState?.bombIntroPhase) ? missionState.bombIntroPhase : "chill";
+  const [phase, setPhase] = useState(initPhase);
 
   useEffect(() => {
-    if (missionState?.bombIntroPhase && missionState.bombIntroPhase !== phase) {
+    if (missionState?.bombIntroPhase && validPhases.includes(missionState.bombIntroPhase) && missionState.bombIntroPhase !== phase) {
       setPhase(missionState.bombIntroPhase);
     }
   }, [missionState?.bombIntroPhase, phase]);
