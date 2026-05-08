@@ -154,12 +154,14 @@ export default function FinalReveal({ mission, onComplete, missionState, onSyncS
   return (
     <div className="screen screen-padded screen-center">
       <div className="fade-in" style={{ maxWidth: 340 }}>
-        <div style={{
-          fontSize: 64, marginBottom: 20,
-          filter: "drop-shadow(0 0 20px rgba(139,26,26,0.2))",
-        }}>
-          💋
-        </div>
+        <img
+          src="/Cat_GIF.gif"
+          alt="MUA!"
+          style={{
+            width: 200, borderRadius: 12, marginBottom: 20,
+            filter: "drop-shadow(0 0 20px rgba(139,26,26,0.2))",
+          }}
+        />
         <div className="card" style={{
           border: "2px solid var(--red)",
           textAlign: "left", padding: 24,

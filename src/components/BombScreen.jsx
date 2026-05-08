@@ -633,10 +633,10 @@ function ManualView({ modules, currentModule, errors, timerStart, mazePos, statu
       {mod.id === "maze" && mod.manual.wallsManual && (
         <div style={{ marginTop: 20 }}>
           <p style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8, fontFamily: "var(--font-cursive)" }}>
-            Vos murs (grille 5×5) :
+            Vos murs (grille 6×6) :
           </p>
           <MazeGrid
-            gridSize={5}
+            gridSize={6}
             walls={mod.manual.wallsManual}
             start={mod.device.start}
             end={mod.device.end}
@@ -649,8 +649,8 @@ function ManualView({ modules, currentModule, errors, timerStart, mazePos, statu
 }
 
 function MazeGrid({ gridSize, walls, start, end, ballPos }) {
-  const cellSize = 42;
   const labelSize = 18;
+  const cellSize = Math.min(50, (window.innerWidth - 80 - labelSize) / gridSize);
   const showBall = ballPos || start;
 
   return (

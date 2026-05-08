@@ -223,6 +223,7 @@ export default function App() {
         completedMissions: next,
         screen: "map",
         activeMissionId: null,
+        missionState: {},
         bombDevicePlayerId: null,
         bombManualPlayerId: null,
         bombModuleIndex: 0,
@@ -257,7 +258,7 @@ export default function App() {
     } else {
       setScreen(SCREENS.MISSION);
     }
-    syncToRoom({ screen: "mission", activeMissionId: missionId });
+    syncToRoom({ screen: "mission", activeMissionId: missionId, missionState: {} });
   }, [syncToRoom]);
 
   const startBomb = useCallback((role) => {
