@@ -12,7 +12,7 @@ export default function FinalReveal({ mission, onComplete, missionState, onSyncS
     if (missionState?.phase && missionState.phase !== phase) {
       setPhase(missionState.phase);
     }
-  }, [missionState?.phase]);
+  }, [missionState?.phase, phase]);
 
   function goPhase(p) {
     setPhase(p);

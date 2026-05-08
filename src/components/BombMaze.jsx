@@ -19,7 +19,8 @@ export default function BombMaze({ module, onSuccess, onError, onMoveSync }) {
   const [shaking, setShaking] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  const cellSize = Math.min(60, (window.innerWidth - 80) / gridSize);
+  const labelSize = 18;
+  const cellSize = Math.min(50, (window.innerWidth - 80 - labelSize) / gridSize);
 
   const move = useCallback((dr, dc) => {
     if (completed) return;
@@ -55,15 +56,37 @@ export default function BombMaze({ module, onSuccess, onError, onMoveSync }) {
 
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
         <svg
-          width={gridSize * cellSize}
-          height={gridSize * cellSize}
+          width={gridSize * cellSize + labelSize}
+          height={gridSize * cellSize + labelSize}
           style={{ border: "2px solid var(--gold-dim)" }}
         >
+          {Array.from({ length: gridSize }, (_, c) => (
+            <text
+              key={`col-${c}`}
+              x={labelSize + c * cellSize + cellSize / 2}
+              y={labelSize - 4}
+              textAnchor="middle"
+              style={{ fontSize: 10, fill: "var(--text-dim)", fontFamily: "var(--font-mono)" }}
+            >
+              {String.fromCharCode(65 + c)}
+            </text>
+          ))}
+          {Array.from({ length: gridSize }, (_, r) => (
+            <text
+              key={`row-${r}`}
+              x={labelSize / 2}
+              y={labelSize + r * cellSize + cellSize / 2 + 4}
+              textAnchor="middle"
+              style={{ fontSize: 10, fill: "var(--text-dim)", fontFamily: "var(--font-mono)" }}
+            >
+              {r + 1}
+            </text>
+          ))}
           {Array.from({ length: gridSize }, (_, r) =>
             Array.from({ length: gridSize }, (_, c) => (
               <rect
                 key={`${r}-${c}`}
-                x={c * cellSize} y={r * cellSize}
+                x={labelSize + c * cellSize} y={labelSize + r * cellSize}
                 width={cellSize} height={cellSize}
                 fill="transparent" stroke="rgba(139,107,63,0.2)" strokeWidth={0.5}
               />
@@ -76,8 +99,8 @@ export default function BombMaze({ module, onSuccess, onError, onMoveSync }) {
               const minC = Math.min(c1, c2);
               return (
                 <line key={i}
-                  x1={(minC + 1) * cellSize} y1={r1 * cellSize}
-                  x2={(minC + 1) * cellSize} y2={(r1 + 1) * cellSize}
+                  x1={labelSize + (minC + 1) * cellSize} y1={labelSize + r1 * cellSize}
+                  x2={labelSize + (minC + 1) * cellSize} y2={labelSize + (r1 + 1) * cellSize}
                   stroke="#8b1a1a" strokeWidth={3}
                 />
               );
@@ -85,8 +108,8 @@ export default function BombMaze({ module, onSuccess, onError, onMoveSync }) {
               const minR = Math.min(r1, r2);
               return (
                 <line key={i}
-                  x1={c1 * cellSize} y1={(minR + 1) * cellSize}
-                  x2={(c1 + 1) * cellSize} y2={(minR + 1) * cellSize}
+                  x1={labelSize + c1 * cellSize} y1={labelSize + (minR + 1) * cellSize}
+                  x2={labelSize + (c1 + 1) * cellSize} y2={labelSize + (minR + 1) * cellSize}
                   stroke="#8b1a1a" strokeWidth={3}
                 />
               );
@@ -94,15 +117,15 @@ export default function BombMaze({ module, onSuccess, onError, onMoveSync }) {
           })}
 
           <circle
-            cx={end[1] * cellSize + cellSize / 2}
-            cy={end[0] * cellSize + cellSize / 2}
+            cx={labelSize + end[1] * cellSize + cellSize / 2}
+            cy={labelSize + end[0] * cellSize + cellSize / 2}
             r={cellSize / 4}
             fill="none" stroke="var(--red)" strokeWidth={2}
           />
 
           <circle
-            cx={pos[1] * cellSize + cellSize / 2}
-            cy={pos[0] * cellSize + cellSize / 2}
+            cx={labelSize + pos[1] * cellSize + cellSize / 2}
+            cy={labelSize + pos[0] * cellSize + cellSize / 2}
             r={cellSize / 3.5}
             fill={completed ? "var(--gold)" : "var(--green)"}
           />

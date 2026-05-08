@@ -134,17 +134,19 @@ Mariarty devra peut-être lever la tête.`,
     title: "Labyrinthe",
     device: {
       instruction: "Guidez le curseur jusqu'à la sortie.",
-      gridSize: 5,
+      gridSize: 6,
       start: [0, 0],
-      end: [4, 0],
+      end: [5, 0],
       wallsDevice: [
-        [[0,0],[1,0]], [[0,1],[1,1]], [[0,2],[1,2]], [[0,3],[1,3]],
-        [[1,3],[1,4]],
-        [[2,1],[2,2]],
-        [[2,4],[3,4]],
+        // shared walls (12) — form the real maze
+        [[0,0],[1,0]], [[0,1],[1,1]], [[0,2],[1,2]], [[0,3],[1,3]], [[0,4],[1,4]],
+        [[1,4],[1,5]],
+        [[2,1],[2,2]], [[2,3],[2,4]],
+        [[3,4],[3,5]],
         [[3,2],[3,3]],
-        [[2,3],[3,3]],
-        [[1,1],[1,2]], [[3,0],[3,1]], [[4,0],[4,1]], [[1,2],[2,2]],
+        [[4,0],[4,1]], [[4,2],[4,3]],
+        // fake walls device only (5)
+        [[1,1],[1,2]], [[3,0],[3,1]], [[5,1],[5,2]], [[2,0],[3,0]], [[4,4],[5,4]],
       ],
     },
     manual: {
@@ -152,19 +154,21 @@ Mariarty devra peut-être lever la tête.`,
       text: `Vous et Mariarty voyez chacun des murs différents.
 Un mur n'est RÉEL que s'il apparaît sur VOS DEUX écrans.
 
-Décrivez vos murs case par case.
+Utilisez les coordonnées (A1, B2...) pour décrire vos murs.
 Mariarty déplace le curseur.
 
 Guidez-la vers la sortie.
 Si elle fonce dans un vrai mur : c'est une erreur.`,
       wallsManual: [
-        [[0,0],[1,0]], [[0,1],[1,1]], [[0,2],[1,2]], [[0,3],[1,3]],
-        [[1,3],[1,4]],
-        [[2,1],[2,2]],
-        [[2,4],[3,4]],
+        // shared walls (12) — same as device
+        [[0,0],[1,0]], [[0,1],[1,1]], [[0,2],[1,2]], [[0,3],[1,3]], [[0,4],[1,4]],
+        [[1,4],[1,5]],
+        [[2,1],[2,2]], [[2,3],[2,4]],
+        [[3,4],[3,5]],
         [[3,2],[3,3]],
-        [[2,3],[3,3]],
-        [[0,4],[1,4]], [[2,2],[3,2]], [[3,3],[4,3]], [[1,1],[2,1]],
+        [[4,0],[4,1]], [[4,2],[4,3]],
+        // fake walls manual only (5)
+        [[1,0],[1,1]], [[2,4],[3,4]], [[4,3],[4,4]], [[1,2],[2,2]], [[3,1],[3,2]],
       ],
     },
     successText: "Chemin trouvé.\nLa géométrie vous remercie.",

@@ -57,7 +57,7 @@ function DialogueMission({ mission, onComplete, missionState, onSyncState }) {
     if (missionState?.stepIndex !== undefined && missionState.stepIndex !== stepIndex) {
       setStepIndex(missionState.stepIndex);
     }
-  }, [missionState?.stepIndex]);
+  }, [missionState?.stepIndex, stepIndex]);
 
   const step = mission.steps[stepIndex];
 
@@ -106,7 +106,7 @@ function RebusMission({ mission, onComplete, photos, onPhotoCapture, missionStat
     if (missionState?.targetIndex !== undefined && missionState.targetIndex !== targetIndex) {
       setTargetIndex(missionState.targetIndex);
     }
-  }, [missionState?.phase, missionState?.targetIndex]);
+  }, [missionState?.phase, missionState?.targetIndex, phase, targetIndex]);
 
   function goPhase(p, extras) {
     setPhase(p);
@@ -225,7 +225,7 @@ function PhotoMission({ mission, onComplete, photos, onPhotoCapture, missionStat
     if (missionState?.poseIndex !== undefined && missionState.poseIndex !== poseIndex) {
       setPoseIndex(missionState.poseIndex);
     }
-  }, [missionState?.phase, missionState?.poseIndex]);
+  }, [missionState?.phase, missionState?.poseIndex, phase, poseIndex]);
 
   function goPhase(p, extras) {
     setPhase(p);
@@ -389,7 +389,7 @@ function BombIntro({ mission, onStartBomb, onBack, missionState, onSyncState }) 
     if (missionState?.bombIntroPhase && missionState.bombIntroPhase !== phase) {
       setPhase(missionState.bombIntroPhase);
     }
-  }, [missionState?.bombIntroPhase]);
+  }, [missionState?.bombIntroPhase, phase]);
 
   function goPhase(p) {
     setPhase(p);
